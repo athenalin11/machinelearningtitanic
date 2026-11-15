@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering\small
+\caption{Repeated $5\times5$ stratified CV on dataset B (mean $\pm$ std of accuracy).}
+\label{tab:models}
+\begin{tabular}{lccc}
+\toprule
+Model & Accuracy & F1 & AUC \\
+\midrule
+Logistic Regression (L2, $C{=}0.1$) & 0.8296 $\pm$ 0.0215 & 0.7744 & 0.8717 \\
+Logistic Regression (L1, $C{=}0.3$) & 0.8298 $\pm$ 0.0223 & 0.7732 & 0.8705 \\
+Logistic Regression + PCA(10) & 0.8292 $\pm$ 0.0254 & 0.7725 & 0.8707 \\
+Random Forest (reference) & 0.8312 $\pm$ 0.0169 & 0.7671 & 0.8799 \\
+Gradient Boosting (reference) & 0.8292 $\pm$ 0.0233 & 0.7740 & 0.8762 \\
+\midrule
+$k$NN & \todo{fill} & \todo{fill} & \todo{fill} \\
+Gaussian Naive Bayes & \todo{fill} & \todo{fill} & \todo{fill} \\
+Decision Tree & \todo{fill} & \todo{fill} & \todo{fill} \\
+SVM (linear / RBF) & \todo{fill} & \todo{fill} & \todo{fill} \\
+\bottomrule
+\end{tabular}
+\end{table}
