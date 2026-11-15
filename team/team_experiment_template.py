@@ -25,7 +25,7 @@ PARAM_GRID = {"clf__n_neighbors": [3, 5, 9, 15, 25], "clf__weights": ["uniform",
 #   NAME="SVM_RBF"; MODEL=Pipeline([("scale",StandardScaler()),("clf",SVC(probability=True))]); PARAM_GRID={"clf__C":[0.3,1,3,10],"clf__gamma":[0.01,0.03,0.1]}
 
 DATA = "B_v4_FamilyFlags_AgeTitlePclassParch"          # label-free dataset: safe for ordinary CV
-tr = pd.read_csv(f"datasets/{DATA}_train.csv")
+tr = pd.read_csv(f"data/processed/{DATA}_train.csv")
 y = tr.Survived; X = tr.drop(columns=["PassengerId", "Survived", "fold"])
 
 inner = StratifiedKFold(5, shuffle=True, random_state=1)
@@ -34,7 +34,7 @@ outer = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
 r = cross_validate(est, X, y, cv=outer, scoring=["accuracy", "f1", "roc_auc"], return_train_score=True)
 res = {"Model": NAME, "Acc": r["test_accuracy"].mean(), "Acc_std": r["test_accuracy"].std(), "F1": r["test_f1"].mean(),
        "AUC": r["test_roc_auc"].mean(), "TrainAcc": r["train_accuracy"].mean()}
-print(res); pd.DataFrame([res]).to_csv(f"results_{NAME}.csv", index=False)
+print(res); pd.DataFrame([res]).to_csv(f"team/results/results_{NAME}.csv", index=False)
 print(f"LaTeX row: {NAME} & {res['Acc']:.4f} $\\pm$ {res['Acc_std']:.4f} & {res['F1']:.4f} & {res['AUC']:.4f} \\\\")
 # TODO for the report: (1) learning/validation curve over the key hyper-parameter (train vs CV accuracy),
 # (2) best hyper-parameters, (3) 2-3 sentences on why the model does / does not suit this data.

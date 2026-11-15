@@ -4,7 +4,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold, cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-tr = pd.read_csv("datasets/B_v4_FamilyFlags_AgeTitlePclassParch_train.csv")
+tr = pd.read_csv("data/processed/B_v4_FamilyFlags_AgeTitlePclassParch_train.csv")
 y = tr.Survived; X = tr.drop(columns=["PassengerId", "Survived", "fold"])
 cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
 m = lambda: Pipeline([("s", StandardScaler()), ("m", LogisticRegression(C=0.1, solver="liblinear"))])

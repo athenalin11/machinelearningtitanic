@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, "features")
 """v2: engineered features + group-survival target encoding (fold-safe) + soft-voting ensemble."""
 import warnings; warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd
@@ -22,7 +23,7 @@ print(f"Ensemble CV acc: {np.mean(accs):.4f} ± {np.std(accs):.4f}")
 A, B = make(al.index[:ntr], al.index[ntr:], EXTRA)
 pred = ens().fit(A, y).predict(B)
 sub = pd.DataFrame({"PassengerId": te.PassengerId, "Survived": pred.astype(int)})
-sub.to_csv("submission_v2.csv", index=False)
-old = pd.read_csv("submission.csv"); g = pd.read_csv("gender_submission.csv")
+sub.to_csv("submissions/final/submission_v2.csv", index=False)
+old = pd.read_csv("submissions/history/submission_v1.csv"); g = pd.read_csv("data/raw/gender_submission.csv")
 print("v2 survive rate", sub.Survived.mean().round(3), "| differs from v1:", (sub.Survived != old.Survived).sum(),
       "| differs from gender baseline:", (sub.Survived != g.Survived).sum())

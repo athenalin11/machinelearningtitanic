@@ -52,7 +52,7 @@ Fig.~\ref{fig:eda} summarises the survival rate of the main variables on the tra
   \item Classes are mildly imbalanced (38.4\% positive), so we report F1 and AUC besides accuracy and use stratified folds.
 \end{itemize}
 \begin{figure*}[t]\centering
-  \includegraphics[width=0.85\textwidth]{eda.png}
+  \includegraphics[width=0.85\textwidth]{figures/eda.png}
   \caption{Survival rate by feature on the training set (dashed line: overall 38.4\%).}\label{fig:eda}
 \end{figure*}
 
@@ -117,18 +117,18 @@ We use \textbf{stratified $5$-fold cross-validation repeated 5 or 10 times}; eve
 \section{Experiments}
 \subsection{Model comparison}
 Table~\ref{tab:models} compares the methods on dataset B with repeated $5\times5$ CV (identical folds for everybody).
-\input{results_table}
+\input{tables/results_table}
 Logistic regression ($L_2$, $L_1$ and on PCA components) reaches 0.829--0.830, and the non-linear references random forest (0.831) and gradient boosting (0.829) are not better within one standard deviation (0.02): flexible models bring no accuracy gain over a regularised linear model on this data set, which supports our choice. The tree ensembles have a somewhat higher AUC (0.876--0.880 vs.\ 0.872), i.e.\ they rank passengers slightly better, but this does not translate into accuracy. Reducing the 23 features to 10 principal components loses nothing, so the one-hot features are redundant.
 \todo{Members 2 and 3: after filling the last four rows of Table~\ref{tab:models}, add 3--5 sentences comparing $k$NN, Naive Bayes, decision tree and SVM with logistic regression (which assumptions fit / do not fit the data?).}
 
 \subsection{Regularisation and over-fitting}\label{sec:reg}
 Following the lecture on over-fitting and structural risk minimisation, we sweep $C$ (inverse regularisation strength) and compare training and validation accuracy (Table~\ref{tab:reg}).
-\input{reg_table}
+\input{tables/reg_table}
 For $C=0.01$ the model is slightly under-fitted (CV 0.826). For all $C\ge0.03$ the train--validation gap is below 1 point, so there is almost no over-fitting, and CV accuracy is highest at $C=0.03$ (0.831) and decreases slowly as regularisation is weakened ($C=100$: 0.826, gap 0.010), the typical onset of over-fitting. Following Occam's razor we prefer strong regularisation ($C\in[0.03,0.1]$) for equal performance. With $L_1$ regularisation only 12 (at $C=0.05$) to 14 (at $C=0.1$) of the 23 coefficients are non-zero while CV stays at 0.830--0.831, which shows that part of the feature set is redundant.
 
 \subsection{Feature ablation}\label{sec:ablation}
 Table~\ref{tab:ablation} shows the effect of removing one feature group at a time (logistic regression, dataset B).
-\input{ablation_table}
+\input{tables/ablation_table}
 \textbf{Title} is the only group whose removal clearly hurts (accuracy $-1.6$ points, AUC $-0.009$). Removing any other single group changes accuracy by less than 0.4 points, which is within the CV standard deviation (0.02); removing Fare even raises accuracy by 0.2 points. This does not mean the other groups are unimportant: they overlap. When the family flags \emph{and} the ticket-based features (TicketSize, LogFarePP) are removed together, accuracy drops by 1.6 points (0.8132, AUC 0.8627), whereas removing either set alone costs almost nothing (0.8289 and 0.8307): the two sets describe the same ``travelling in a group'' information. Likewise Title contains Sex: removing both Title and Sex gives 0.740, but removing only Sex gives 0.828, and Sex alone gives only 0.787 (AUC 0.767). A one-at-a-time ablation therefore underestimates groups that have a substitute; group-wise removal (as done here) is more informative than removing single columns, but the conclusions must be read together with these overlaps.
 
 \subsection{Error analysis}

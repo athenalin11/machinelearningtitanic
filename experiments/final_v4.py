@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, "features")
 """v4: simplified family flags + Title x Pclass x HasParch age imputation (+ fold-safe group survival features).
 Compares v2 / v3 / v4 under identical CV folds and writes submission_v4a.csv (LR) and submission_v4b.csv (ensemble)."""
 import warnings; warnings.filterwarnings("ignore")
@@ -9,7 +10,7 @@ from final_v3 import al, tr, te, ntr, y, make3, wc_feat, lr, GB, RF
 from improve_experiments import group_feat
 
 # ---- v4 label-free base features ----
-raw_age = pd.Series(pd.read_csv("train.csv").Age.tolist() + pd.read_csv("test.csv").Age.tolist(), index=al.index)
+raw_age = pd.Series(pd.read_csv("data/raw/train.csv").Age.tolist() + pd.read_csv("data/raw/test.csv").Age.tolist(), index=al.index)
 has_parch = al.Parch > 0
 a = raw_age
 age4 = a.fillna(a.groupby([al.Title, al.Pclass, has_parch]).transform("median")) \
@@ -66,8 +67,8 @@ d = store["v4a simple + group + wc, LR(C=.03)"] - store["v2  group feats, ensemb
 print(f"paired diff v4a - v2: {d.mean():+.4f}  (std err {d.std()/np.sqrt(len(d)):.4f})")
 
 # ---- final fit + submissions ----
-v2 = pd.read_csv("submission_v2.csv"); v3b = pd.read_csv("submission_v3b.csv")
-for f, mf in [("submission_v4a.csv", lambda: lr(0.03)), ("submission_v4b.csv", ens)]:
+v2 = pd.read_csv("submissions/final/submission_v2.csv"); v3b = pd.read_csv("submissions/history/submission_v3b.csv")
+for f, mf in [("submissions/history/submission_v4a.csv", lambda: lr(0.03)), ("submissions/history/submission_v4b.csv", ens)]:
     A, B = make4(al.index[:ntr], al.index[ntr:])
     p = mf().fit(A, y).predict(B)
     s = pd.DataFrame({"PassengerId": te.PassengerId, "Survived": p.astype(int)}); s.to_csv(f, index=False)

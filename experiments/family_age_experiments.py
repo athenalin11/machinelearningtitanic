@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, "features")
 import warnings; warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd
 from sklearn.model_selection import RepeatedStratifiedKFold, cross_val_score, KFold
@@ -9,7 +10,7 @@ import improve_experiments as ie
 from improve_experiments import al, tr, ntr
 
 y = tr.Survived.values
-al["AgeRaw"] = pd.read_csv("train.csv").Age.tolist() + pd.read_csv("test.csv").Age.tolist()
+al["AgeRaw"] = pd.read_csv("data/raw/train.csv").Age.tolist() + pd.read_csv("data/raw/test.csv").Age.tolist()
 known = al.AgeRaw.notna()
 
 # ---------- 1. Can we recover families? ----------

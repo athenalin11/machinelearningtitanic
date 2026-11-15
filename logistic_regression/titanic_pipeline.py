@@ -4,7 +4,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-tr = pd.read_csv("train.csv"); te = pd.read_csv("test.csv")
+tr = pd.read_csv("data/raw/train.csv"); te = pd.read_csv("data/raw/test.csv")
 
 # ---------- EDA ----------
 print("shape", tr.shape, "\nmissing:\n", tr.isna().sum()[lambda s: s > 0])
@@ -103,10 +103,10 @@ for g, cols in groups.items():
 
 p = Pipeline([("s", StandardScaler()), ("m", LogisticRegression(max_iter=2000))]).fit(X, y)
 print("\nTop coefficients:\n", pd.Series(p[-1].coef_[0], allc).sort_values(key=abs, ascending=False).head(10).round(3))
-pd.DataFrame({"PassengerId": te.PassengerId, "Survived": p.predict(Xte)}).to_csv("submission.csv", index=False)
+pd.DataFrame({"PassengerId": te.PassengerId, "Survived": p.predict(Xte)}).to_csv("submissions/history/submission_v1.csv", index=False)
 
 # ---------- Export processed data (unscaled, one-hot encoded) ----------
 out_tr = X.copy(); out_tr.insert(0, "Survived", y.values); out_tr.insert(0, "PassengerId", tr.PassengerId.values)
 out_te = Xte.copy(); out_te.insert(0, "PassengerId", te.PassengerId.values)
-out_tr.to_csv("train_processed.csv", index=False); out_te.to_csv("test_processed.csv", index=False)
+out_tr.to_csv("data/interim/train_processed.csv", index=False); out_te.to_csv("data/interim/test_processed.csv", index=False)
 print("\nprocessed", out_tr.shape, out_te.shape, "NaN:", out_tr.isna().sum().sum(), out_te.isna().sum().sum())

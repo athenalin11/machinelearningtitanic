@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-tr = pd.read_csv("train.csv"); te = pd.read_csv("test.csv")
+tr = pd.read_csv("data/raw/train.csv"); te = pd.read_csv("data/raw/test.csv")
 al = pd.concat([tr, te], ignore_index=True)
 ntr = len(tr)
 

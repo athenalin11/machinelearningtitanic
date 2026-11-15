@@ -1,29 +1,7 @@
-# Course material (copyright) and raw Kaggle files: download from Kaggle / course site instead
 *.pptx
-train.csv
-test.csv
-gender_submission.csv
-train_processed.csv
-test_processed.csv
-
-# Scratch / logs
-*_out.txt
-latex1.txt
-latex2.txt
-fs_slides.txt
-git_info.txt
 __pycache__/
-*.pyc
-.DS_Store
-
-# LaTeX build files
 *.aux
 *.log
 *.out
-*.toc
-
-# Superseded: feature engineering is part of report.tex now
-feature_engineering_report.*
-cv_boxplot.png
-results.csv
-ablation.csv
+*.synctex.gz
+.DS_Store

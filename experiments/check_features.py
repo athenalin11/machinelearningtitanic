@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, "features")
 import warnings; warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd
 from sklearn.model_selection import RepeatedStratifiedKFold, cross_val_score
@@ -7,7 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from improve_experiments import al, tr, ntr, base_frame
 
 y = tr.Survived.values
-raw = pd.read_csv("train.csv")
+raw = pd.read_csv("data/raw/train.csv")
 print("Fare skew raw %.2f | log1p %.2f | sqrt %.2f" % (raw.Fare.skew(), np.log1p(raw.Fare).skew(), np.sqrt(raw.Fare).skew()))
 print("Fare quantiles:", raw.Fare.quantile([.5, .9, .99, 1]).round(1).tolist())
 print("corr with Survived: raw %.3f | log %.3f" % (raw.Fare.corr(raw.Survived), np.log1p(raw.Fare).corr(raw.Survived)))

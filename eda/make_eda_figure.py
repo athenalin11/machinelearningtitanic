@@ -1,7 +1,7 @@
 import pandas as pd, numpy as np
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-tr = pd.read_csv("train.csv")
+tr = pd.read_csv("data/raw/train.csv")
 fig, ax = plt.subplots(2, 3, figsize=(10, 5.6))
 def bar(a, s, title, labels=None):
     s = s.round(3); a.bar([str(i) for i in s.index], s.values, color="#4C72B0"); a.set_ylim(0, 1)
@@ -16,4 +16,4 @@ bar(ax[1, 0], tr.groupby(fam).Survived.mean(), "Family size (6 = 6+)")
 bar(ax[1, 1], tr.groupby(pd.qcut(tr.Fare, 4, labels=["Q1", "Q2", "Q3", "Q4"])).Survived.mean(), "Fare quartile")
 bar(ax[1, 2], tr.groupby(tr.Cabin.notna().map({True: "known", False: "missing"})).Survived.mean(), "Cabin")
 fig.suptitle("Survival rate by feature (dashed: overall 38.4\\%)".replace("\\%", "%"), fontsize=10)
-plt.tight_layout(); plt.savefig("eda.png", dpi=200)
+plt.tight_layout(); plt.savefig("report/figures/eda.png", dpi=200)

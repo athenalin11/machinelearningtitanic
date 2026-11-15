@@ -4,7 +4,7 @@ from sklearn.ensemble import VotingClassifier
 from final_v3 import al, tr, te, ntr, y, wc_feat, lr, GB, RF
 from improve_experiments import group_feat
 
-raw_age = pd.Series(pd.read_csv("train.csv").Age.tolist() + pd.read_csv("test.csv").Age.tolist(), index=al.index)
+raw_age = pd.Series(pd.read_csv("data/raw/train.csv").Age.tolist() + pd.read_csv("data/raw/test.csv").Age.tolist(), index=al.index)
 has_parch = al.Parch > 0
 age4 = (raw_age.fillna(raw_age.groupby([al.Title, al.Pclass, has_parch]).transform("median"))
         .fillna(raw_age.groupby([al.Title, al.Pclass]).transform("median")).fillna(raw_age.median()))

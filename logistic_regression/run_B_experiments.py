@@ -12,7 +12,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import confusion_matrix, classification_report
 
 NAME = "B_v4_FamilyFlags_AgeTitlePclassParch"
-tr = pd.read_csv(f"datasets/{NAME}_train.csv")
+tr = pd.read_csv(f"data/processed/{NAME}_train.csv")
 y = tr.Survived; X = tr.drop(columns=["PassengerId", "Survived", "fold"]); allc = list(X.columns)
 rcv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)   # same protocol for the whole team
 
@@ -33,8 +33,8 @@ rows = []
 for n, m in models.items():
     r = ev(m); rows.append((n, r["test_accuracy"].mean(), r["test_accuracy"].std(), r["test_f1"].mean(), r["test_roc_auc"].mean()))
     print(f"{n:42s} acc {rows[-1][1]:.4f} ± {rows[-1][2]:.4f} f1 {rows[-1][3]:.4f} auc {rows[-1][4]:.4f}", flush=True)
-pd.DataFrame(rows, columns=["Model", "Acc", "Acc_std", "F1", "AUC"]).to_csv("results_B.csv", index=False)
-with open("results_table.tex", "w") as f:
+pd.DataFrame(rows, columns=["Model", "Acc", "Acc_std", "F1", "AUC"]).to_csv("logistic_regression/results/results_B.csv", index=False)
+with open("report/tables/results_table.tex", "w") as f:
     f.write("\\begin{table}[t]\n\\centering\\small\n\\caption{Repeated $5\\times5$ stratified CV on dataset B (mean $\\pm$ std of accuracy).}\n\\label{tab:models}\n"
             "\\begin{tabular}{lccc}\n\\toprule\nModel & Accuracy & F1 & AUC \\\\\n\\midrule\n")
     for n, a, s, f1, u in rows: f.write(f"{n} & {a:.4f} $\\pm$ {s:.4f} & {f1:.4f} & {u:.4f} \\\\\n")
@@ -48,7 +48,7 @@ reg = []
 print("\nC sweep (train vs CV)")
 for C in [0.01, 0.03, 0.1, 0.3, 1, 10, 100]:
     r = ev(lr(C)); tra, cva = r["train_accuracy"].mean(), r["test_accuracy"].mean(); reg.append((C, tra, cva, tra - cva)); print(f" C={C:<6} train {tra:.4f} cv {cva:.4f} gap {tra-cva:.4f}")
-with open("reg_table.tex", "w") as f:
+with open("report/tables/reg_table.tex", "w") as f:
     f.write("\\begin{table}[t]\n\\centering\\small\n\\caption{Training vs.\\ CV accuracy of $L_2$ logistic regression on dataset B (repeated $5\\times5$ CV).}\n\\label{tab:reg}\n"
             "\\begin{tabular}{rccc}\n\\toprule\n$C$ & Train & CV & Gap \\\\\n\\midrule\n")
     for C, a, b, g in reg: f.write(f"{C} & {a:.4f} & {b:.4f} & {g:.4f} \\\\\n")
@@ -67,9 +67,9 @@ ab = [("All features", ba, bu, 0.0, 0.0)]
 for k, cols in g.items():
     r = ev(lr(0.1), [c for c in allc if c not in cols]); a, u = r["test_accuracy"].mean(), r["test_roc_auc"].mean(); ab.append((f"$-$ {k}", a, u, a - ba, u - bu))
 r = ev(lr(0.1), ["Female"]); ab.append(("Only Sex", r["test_accuracy"].mean(), r["test_roc_auc"].mean(), r["test_accuracy"].mean() - ba, r["test_roc_auc"].mean() - bu))
-pd.DataFrame(ab, columns=["Setting", "Acc", "AUC", "dAcc", "dAUC"]).to_csv("ablation_B.csv", index=False)
+pd.DataFrame(ab, columns=["Setting", "Acc", "AUC", "dAcc", "dAUC"]).to_csv("logistic_regression/results/ablation_B.csv", index=False)
 print("\nAblation:"); [print(f" {s:16s} acc {a:.4f} ({da:+.4f})  auc {u:.4f} ({du:+.4f})") for s, a, u, da, du in ab]
-with open("ablation_table.tex", "w") as f:
+with open("report/tables/ablation_table.tex", "w") as f:
     f.write("\\begin{table}[t]\n\\centering\\small\n\\caption{Feature-group ablation, logistic regression ($L_2$, $C{=}0.1$) on dataset B, repeated $5\\times5$ CV.}\n\\label{tab:ablation}\n"
             "\\begin{tabular}{lcccc}\n\\toprule\nSetting & Acc & $\\Delta$Acc & AUC & $\\Delta$AUC \\\\\n\\midrule\n")
     for s, a, u, da, du in ab: f.write(f"{s} & {a:.4f} & {da:+.4f} & {u:.4f} & {du:+.4f} \\\\\n")

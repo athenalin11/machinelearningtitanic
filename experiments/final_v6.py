@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, "features")
 """v6: feature selection (filter / wrapper / embedded, all fitted INSIDE each CV fold, per lecture L11) and
 an averaged (majority-vote) model. Writes submission_v6_sel.csv, submission_v6_avg.csv, submission_vote5.csv."""
 import warnings; warnings.filterwarnings("ignore")
@@ -53,9 +54,9 @@ p_ens = ens().fit(A, y).predict(B)
 p_rule = predict_rule(al.index[:ntr], al.index[ntr:], **RULE_KW)
 p_avg = ((p_sel + p_ens + p_rule) >= 2).astype(int)
 def save(f, p): pd.DataFrame({"PassengerId": te.PassengerId.values, "Survived": np.asarray(p).astype(int)}).to_csv(f, index=False)
-save("submission_v6_sel.csv", p_sel); save("submission_v6_avg.csv", p_avg)
-subs = {f: pd.read_csv(f).Survived.values for f in ["submission_v2.csv", "submission_v3b.csv", "submission_v4b.csv", "submission_v5.csv"]}
+save("submissions/history/submission_v6_sel.csv", p_sel); save("submissions/history/submission_v6_avg.csv", p_avg)
+subs = {f: pd.read_csv(f).Survived.values for f in ["submissions/final/submission_v2.csv", "submissions/history/submission_v3b.csv", "submissions/history/submission_v4b.csv", "submissions/history/submission_v5.csv"]}
 subs["v6_sel"] = p_sel
-vote5 = (np.sum(list(subs.values()), axis=0) >= 3).astype(int); save("submission_vote5.csv", vote5)
+vote5 = (np.sum(list(subs.values()), axis=0) >= 3).astype(int); save("submissions/history/submission_vote5.csv", vote5)
 for n, p in [("v6_sel", p_sel), ("v6_avg", p_avg), ("vote5", vote5)]:
     print(f"{n}: rate {np.mean(p):.3f} | differs from v2: {(p != subs['submission_v2.csv']).sum()}")
