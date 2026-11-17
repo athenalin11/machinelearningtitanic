@@ -1,0 +1,71 @@
+{
+  "smoke_test": false,
+  "python": "3.12.6",
+  "numpy": "2.2.6",
+  "pandas": "2.2.3",
+  "scikit_learn": "1.6.1",
+  "matplotlib": "3.10.3",
+  "dataset": "data\\processed\\B_v4_FamilyFlags_AgeTitlePclassParch_train.csv",
+  "features": [
+    "Female",
+    "Age",
+    "IsChild",
+    "AgeMissing",
+    "LogFare",
+    "HasCabin",
+    "HasFamily",
+    "HasChildren",
+    "WithParents",
+    "LargeFamily",
+    "Title_Master",
+    "Title_Miss",
+    "Title_Mr",
+    "Title_Mrs",
+    "Title_Rare",
+    "Embarked_C",
+    "Embarked_Q",
+    "Embarked_S",
+    "Pclass_1",
+    "Pclass_2",
+    "Pclass_3",
+    "TicketSize",
+    "LogFarePP"
+  ],
+  "dataset_sha256": "64dd60f2767ada563fd25796221d42012e001c043c631aad4612982e29cd66af",
+  "outer": {
+    "splits": 5,
+    "repeats": 5,
+    "seed": 42
+  },
+  "inner": {
+    "splits": 5,
+    "shuffle": true,
+    "seed": 1
+  },
+  "grid": {
+    "max_depth": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      null
+    ],
+    "min_samples_leaf": [
+      1,
+      5,
+      10,
+      20
+    ]
+  },
+  "criterion": "gini",
+  "tree_random_state": 0,
+  "scoring": "accuracy",
+  "std_ddof": 0,
+  "notes": [
+    "Precomputed dataset B preprocessing is not refitted within folds.",
+    "Depth curves are inner-CV diagnostics, not unbiased outer estimates.",
+    "Impurity importances can favour continuous/high-cardinality features."
+  ]
+}

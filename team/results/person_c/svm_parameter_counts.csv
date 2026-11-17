@@ -1,0 +1,13 @@
+model,selected_C,selected_gamma,outer_fold_count
+linear,0.01,not_applicable,4
+linear,0.1,not_applicable,4
+linear,0.3,not_applicable,17
+rbf,0.1,0.1,3
+rbf,0.1,scale,4
+rbf,0.3,0.01,2
+rbf,0.3,scale,6
+rbf,1.0,0.03,2
+rbf,1.0,scale,1
+rbf,3.0,0.01,2
+rbf,3.0,0.03,2
+rbf,100.0,0.001,3
