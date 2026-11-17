@@ -5,7 +5,7 @@
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \title{AI6102 Team Project: Predicting Survival on the Titanic}
 \author{%
-  LIN, YUN-FAN (G2608301F) \and \todo{Member 2: NAME (Matric No.)} \and \todo{Member 3: NAME (Matric No.)}\\
+  LIN, YUN-FAN (G2608301F) \and\todo{Member 2: NAME (Matric No.)}\and WANG, YAHUI (G2606270J)\\
 }
 \date{}
 \begin{document}
@@ -13,7 +13,7 @@
 
 \begin{abstract}
 We study the Kaggle \emph{Titanic -- Machine Learning from Disaster} competition, a binary classification task.
-We build a leakage-safe preprocessing and feature-engineering pipeline, compare several learning methods with repeated
+We build a preprocessing and feature-engineering pipeline, compare several learning methods with repeated
 stratified cross-validation, and analyse the contribution of each feature group with an ablation study.
 A regularised logistic regression reaches $\approx$0.83 CV accuracy, on par with tree ensembles.
 Adding fold-safe group-survival features raises the public score from 0.766 to 0.797.
@@ -27,7 +27,7 @@ Submissions are scored by accuracy on the hidden test labels.
 \section{Challenges}
 \begin{itemize}
   \item \textbf{Missing data:} Age is missing for 19.9\% of training rows, Cabin for 77.1\%, Embarked for 2 rows; the test set additionally lacks one Fare.
-  \item \textbf{Small sample:} with 891 rows, CV estimates have a standard deviation of about 0.025, so small differences between methods are not significant.
+  \item \textbf{Small sample:} with 891 rows, CV estimates have a standard deviation of about 0.025; this variability alone does not establish whether differences between methods are statistically significant.
   \item \textbf{Mixed, messy features:} free-text names, skewed fare, categorical codes, and strongly correlated variables (Sex/Title, Pclass/Fare/Cabin).
   \item \textbf{Overfitting risk} for flexible models on few samples.
 \end{itemize}
@@ -40,7 +40,7 @@ We therefore (i) encode these signals explicitly as features, (ii) use a regular
 (Occam's razor / structural risk minimisation), and (iii) compare against non-linear alternatives to check whether extra
 complexity helps.
 
-\subsection{Exploratory data analysis}
+\subsection{Exploratory Data Analysis}
 Fig.~\ref{fig:eda} summarises the survival rate of the main variables on the training set. Our reading of the plots drove every later design decision:
 \begin{itemize}
   \item \textbf{Sex} is the strongest signal (74.2\% female vs.\ 18.9\% male), consistent with the ``women and children first'' rule. A sex-only rule already scores 0.787 on the training set.
@@ -56,8 +56,8 @@ Fig.~\ref{fig:eda} summarises the survival rate of the main variables on the tra
   \caption{Survival rate by feature on the training set (dashed line: overall 38.4\%).}\label{fig:eda}
 \end{figure*}
 
-\subsection{Data preparation}
-All statistics used for imputation come from the training data only and are applied unchanged to the test set.
+\subsection{Data Preparation}
+The original baseline uses training-reference imputation. For the exported dataset B used in the model comparison, however, age medians and ticket counts were computed on combined train/test covariates before CV. These features use no survival labels, but preprocessing was not refitted within folds; see the limitations below.
 \begin{table}[t]
 \centering\small
 \caption{Missing values and how they were handled.}
@@ -75,7 +75,7 @@ Cabin & 687 / 327 & Not imputed: 77\% missing, so any value would be fabricated.
 \end{table}
 No rows were removed (only 891 samples). Columns dropped: \texttt{PassengerId} (running index), \texttt{Name} (information extracted into Title and Surname), \texttt{Cabin} (replaced by HasCabin), \texttt{Ticket} (used only as a grouping key). Categorical variables (Title, Embarked, Pclass) are one-hot encoded because they are nominal and a linear model should not assume equal spacing; numeric variables are standardised inside the model pipeline.
 
-\subsection{Feature engineering}\label{sec:fe}
+\subsection{Feature Engineering}\label{sec:fe}
 Each feature is motivated by the EDA and validated by the ablation study (Sec.~\ref{sec:ablation}).
 \begin{table*}[t]
 \centering\small
@@ -98,7 +98,7 @@ Group-survival rates & For every passenger: smoothed survival rate $(s+2\bar y)/
 \end{table*}
 \paragraph{Avoiding leakage.} Group-survival features are derived from labels, so they are computed \emph{inside every CV training fold} using that fold's training labels only, with leave-one-out for the passenger's own row; test rows use all training labels. Imputation statistics and ticket counts use no labels. Scaling is fitted inside the pipeline of each fold.
 
-\subsection{Logistic regression}
+\subsection{Logistic Regression}
 Our main model is $L_2$-regularised logistic regression (Lectures 3--4). For a feature vector $x$,
 \[
 p(y{=}1\mid x)=\sigma(w^\top x+b),\qquad \sigma(z)=\frac{1}{1+e^{-z}},
@@ -109,42 +109,85 @@ and the parameters minimise the regularised cross-entropy, which equals the nega
 \]
 This is structural risk minimisation: $1/C$ controls model complexity (Occam's razor). The objective is convex and differentiable, so a global optimum is found with L-BFGS (liblinear for $L_1$). Features are standardised so that the penalty treats all coefficients equally. We chose logistic regression because (i) the signals found in the EDA are largely additive, (ii) with 891 samples a low-variance model is preferable, and (iii) its coefficients can be interpreted: with standardised inputs the largest were LargeFamily ($-0.60$), Female ($+0.58$), Title\_Mr ($-0.54$), Title\_Master ($+0.42$), Title\_Mrs ($+0.38$), Age ($-0.31$), HasCabin ($+0.29$) and Pclass\_3 ($-0.27$). The regularisation strength $C$ is selected by cross-validation (Sec.~\ref{sec:reg}); other models serve as comparison.
 
-\subsection{Evaluation protocol}
-We use \textbf{stratified $5$-fold cross-validation repeated 5 or 10 times}; every candidate is evaluated on identical splits, so differences are paired. Hyper-parameters of $k$NN and SVM are tuned by \emph{nested} CV (inner 5-fold on each outer training fold). Metrics are accuracy, F1 and ROC-AUC. The Kaggle public score is used only as a final check. \textbf{Feature ablation:} we remove one feature group at a time (Sex, Pclass, Title, Age, Family, Fare, Cabin, Embarked), retrain with the same pipeline and splits, and report the change in accuracy and AUC relative to the full model; ``Only Sex'' gives the lower bound.
+\subsection{Evaluation Protocol}
+For the dataset-B comparison we use \textbf{stratified 5-fold CV repeated 5 times} (outer seed 42); some earlier feature experiments use other seeds or 10 repeats. The decision tree and SVM models use nested CV: an inner stratified 5-fold splitter (shuffle enabled, seed 1) and accuracy-scored grid search within each outer training fold. The selected estimator is refitted on that outer training fold and evaluated on its held-out fold. The LR and ensemble references use the same outer splitter but fixed configurations, with separate LR parameter sweeps rather than nested selection. Metrics are accuracy, survivor-class F1 and ROC-AUC, averaged over 25 outer folds; reported standard deviations use divisor 25. Tree AUC uses predicted probabilities; SVM AUC uses decision scores. The Kaggle public score is used only as a final check. \textbf{Feature ablation:} we remove one feature group at a time (Sex, Pclass, Title, Age, Family, Fare, Cabin, Embarked), retrain with the same pipeline and splits, and report the change in accuracy and AUC relative to the full model; ``Only Sex'' gives the lower bound.
 
-\textbf{Models compared.} Our own models: logistic regression ($L_2$ and $L_1$), logistic regression on PCA components, and random forest / gradient boosting as non-linear references. Teammates evaluate $k$NN, Gaussian Naive Bayes, decision tree and SVM with the same protocol (script \texttt{team\_experiment\_template.py}). All model comparisons, the regularisation sweep and the ablation use \textbf{dataset B} (23 label-free features, Sec.~\ref{sec:fe}); the group-survival features of dataset C enter only the iteration study of Sec.~\ref{sec:iter}.
+\textbf{Models compared.} We evaluate logistic regression ($L_2$ and $L_1$), logistic regression on PCA components, and random forest / gradient boosting as non-linear references. We further evaluate a decision tree and linear/RBF SVMs with the nested protocol in \texttt{team/person\_c\_tree\_svm.py} and \texttt{team/person\_c\_svm.py}; the $k$NN and Gaussian Naive Bayes evaluations remain incomplete. All model comparisons, the regularisation sweep and the ablation use \textbf{dataset B} (23 label-free features, Sec.~\ref{sec:fe}); the group-survival features of dataset C enter only the iteration study of Sec.~\ref{sec:iter}. For the tree and SVM experiments, we drop PassengerId, Survived and fold from the predictors, use all 23 features without further feature selection, and fit SVM scaling within each inner and outer training fold.
 
 \section{Experiments}
-\subsection{Model comparison}
-Table~\ref{tab:models} compares the methods on dataset B with repeated $5\times5$ CV (identical folds for everybody).
-\input{tables/results_table}
-Logistic regression ($L_2$, $L_1$ and on PCA components) reaches 0.829--0.830, and the non-linear references random forest (0.831) and gradient boosting (0.829) are not better within one standard deviation (0.02): flexible models bring no accuracy gain over a regularised linear model on this data set, which supports our choice. The tree ensembles have a somewhat higher AUC (0.876--0.880 vs.\ 0.872), i.e.\ they rank passengers slightly better, but this does not translate into accuracy. Reducing the 23 features to 10 principal components loses nothing, so the one-hot features are redundant.
-\todo{Members 2 and 3: after filling the last four rows of Table~\ref{tab:models}, add 3--5 sentences comparing $k$NN, Naive Bayes, decision tree and SVM with logistic regression (which assumptions fit / do not fit the data?).}
+\subsection{Model Comparison}
+Table~\ref{tab:models} compares the methods on dataset B with repeated $5\times5$ CV and the same outer splits; tuning protocols differ as described above.
+% Integration table is separate from the output overwritten by run_B_experiments.py.
+\input{tables/results_table_integrated}
+Logistic regression ($L_2$, $L_1$ and on PCA components) reaches 0.829--0.830, while the non-linear references random forest and gradient boosting reach 0.8312 and 0.8292. Their AUCs (0.8799 and 0.8762) exceed the $L_2$ LR value of 0.8717. PCA(10) gives a similar observed accuracy to LR on all 23 features; this suggests a compact representation may suffice, rather than proving that individual features are redundant.
 
-\subsection{Regularisation and over-fitting}\label{sec:reg}
+The decision tree tuned by nested CV reaches 0.8303 accuracy, linear SVM 0.8274 and RBF SVM 0.8240. The tree's rules can express interactions between sex/title, class and fare, whereas linear SVM uses an additive boundary in the engineered feature space. RBF allows local non-linear boundaries, but here has lower observed accuracy and F1 than linear SVM, despite higher AUC (0.8558 versus 0.8365). All three have lower observed AUC than the existing LR and ensemble references. These descriptive rankings do not establish statistical superiority: folds overlap and tuning protocols are not identical. The later soft-vote ensemble (LR, GB, RF) also uses target-derived group features and a different iteration protocol, so its recorded 0.840 CV accuracy and 0.79665 public score are not a controlled model-only comparison with the dataset-B tree/SVM results.
+\todo{Member 2: add the $k$NN and Naive Bayes comparisons after their results are available.}
+
+\subsection{Regularisation and Overfitting}\label{sec:reg}
 Following the lecture on over-fitting and structural risk minimisation, we sweep $C$ (inverse regularisation strength) and compare training and validation accuracy (Table~\ref{tab:reg}).
 \input{tables/reg_table}
 For $C=0.01$ the model is slightly under-fitted (CV 0.826). For all $C\ge0.03$ the train--validation gap is below 1 point, so there is almost no over-fitting, and CV accuracy is highest at $C=0.03$ (0.831) and decreases slowly as regularisation is weakened ($C=100$: 0.826, gap 0.010), the typical onset of over-fitting. Following Occam's razor we prefer strong regularisation ($C\in[0.03,0.1]$) for equal performance. With $L_1$ regularisation only 12 (at $C=0.05$) to 14 (at $C=0.1$) of the 23 coefficients are non-zero while CV stays at 0.830--0.831, which shows that part of the feature set is redundant.
 
-\subsection{Feature ablation}\label{sec:ablation}
+\subsection{Feature Ablation}\label{sec:ablation}
 Table~\ref{tab:ablation} shows the effect of removing one feature group at a time (logistic regression, dataset B).
 \input{tables/ablation_table}
 \textbf{Title} is the only group whose removal clearly hurts (accuracy $-1.6$ points, AUC $-0.009$). Removing any other single group changes accuracy by less than 0.4 points, which is within the CV standard deviation (0.02); removing Fare even raises accuracy by 0.2 points. This does not mean the other groups are unimportant: they overlap. When the family flags \emph{and} the ticket-based features (TicketSize, LogFarePP) are removed together, accuracy drops by 1.6 points (0.8132, AUC 0.8627), whereas removing either set alone costs almost nothing (0.8289 and 0.8307): the two sets describe the same ``travelling in a group'' information. Likewise Title contains Sex: removing both Title and Sex gives 0.740, but removing only Sex gives 0.828, and Sex alone gives only 0.787 (AUC 0.767). A one-at-a-time ablation therefore underestimates groups that have a substitute; group-wise removal (as done here) is more informative than removing single columns, but the conclusions must be read together with these overlaps.
 
-\subsection{Error analysis}
+\subsection{Error Analysis}
 With $C=0.1$ the out-of-fold confusion matrix is TN$=477$, FP$=72$, FN$=83$, TP$=259$ (survivors: precision 0.782, recall 0.757, F1 0.770; non-survivors: recall 0.869). The model misses more survivors than it falsely flags; a lower decision threshold would trade precision for recall if detecting survivors were more important.
 
-\subsection{Other methods}
-\subsubsection{$k$-nearest neighbours (Member 2)}
+\subsection{Other Methods}
+\subsubsection{$k$-Nearest Neighbours}
 \todo{Describe the method and why it may (not) fit the data; distance metric and feature scaling; tuned $k$ (nested CV); train-vs-CV curve over $k$; result row in Table~\ref{tab:models}.}
-\subsubsection{Naive Bayes (Member 2)}
+\subsubsection{Naive Bayes}
 \todo{Describe the (Gaussian / Bernoulli) model and the independence assumption; discuss which of our features violate it (e.g.\ Sex and Title); result row in Table~\ref{tab:models}.}
-\subsubsection{Decision tree (Member 3)}
-\todo{Describe the splitting criterion; tune \texttt{max\_depth} / \texttt{min\_samples\_leaf} by nested CV; train-vs-CV curve over depth (over-fitting); show the tree or feature importances; result row in Table~\ref{tab:models}.}
-\subsubsection{Support vector machine (Member 3)}
-\todo{Linear vs.\ RBF kernel; tune $C$ (and $\gamma$) by nested CV; discuss margin / regularisation and the relation to logistic regression; result row in Table~\ref{tab:models}.}
+\subsubsection{Decision Tree}
+A binary decision tree chooses feature thresholds to reduce the weighted impurity of its child nodes. At a node with class proportions $p_k$, the Gini index is
+\[
+G=1-\sum_{k\in\{0,1\}}p_k^2.
+\]
+Pure nodes have $G=0$. We use \texttt{criterion="gini"} and \texttt{random\_state=0}. The maximum depth limits successive splits, while \texttt{min\_samples\_leaf} prevents leaves supported by too few passengers. The inner grid searches depths $\{2,3,4,5,6,8,\mathrm{None}\}$ and leaf sizes $\{1,5,10,20\}$ (28 combinations); None removes the depth limit. Scaling is unnecessary for these threshold splits.
 
-\subsection{Iterative improvement and leaderboard}\label{sec:iter}
+Across the 25 outer folds, accuracy is $0.8303\pm0.0281$, F1 is 0.7714, ROC-AUC is 0.8604 and training accuracy is 0.8652. The mean train--test accuracy gap is 0.0349. The most frequent selected pair is depth 4 with leaf size 1 (7/25 folds); parameters are selected separately in each fold, so this is not a single final full-data fit.
+
+Fig.~\ref{fig:person-c-depth} shows inner-CV training and validation accuracy. At each depth, leaf size is selected independently using that outer fold's inner validation scores, then the inner means are averaged over outer folds. Depth 2 gives training/validation accuracies 0.8033/0.7886, consistent with underfitting relative to depths 4--6. At depth 6 these are 0.8779/0.8257; validation accuracy falls to 0.8208 at depth 8 and 0.8189 without a depth limit. This pattern supports controlling complexity. Since leaf size is reselected at each depth, training accuracy need not increase monotonically. These tuning diagnostics are not independent outer-test performance estimates.
+\begin{figure}[t]\centering
+  \includegraphics[width=\linewidth]{figures/person_c_tree_depth.png}
+  \caption{Tree depth experiment: inner-CV training and validation means. Error bars show the standard deviation of the inner validation means across outer folds.}\label{fig:person-c-depth}
+\end{figure}
+
+Fig.~\ref{fig:person-c-importance} averages impurity-based feature importance over the 25 selected outer models. The largest mean contributions are Title\_Mr (0.4070), Female (0.1262), Pclass\_3 (0.1006), LogFarePP (0.0957) and TicketSize (0.0568). Correlated predictors such as sex and title can substitute for one another, and impurity importance can favour continuous or high-cardinality features; these values describe the fitted trees, not causal effects or a validated feature-selection rule.
+\begin{figure}[t]\centering
+  \includegraphics[width=\linewidth]{figures/person_c_tree_importance.png}
+  \caption{Mean Gini importance and standard deviation across the 25 selected outer-fold trees. Symmetric error bars may extend below zero although each fitted importance is non-negative.}\label{fig:person-c-importance}
+\end{figure}
+\subsubsection{Support Vector Machine}
+SVM balances a large margin against hinge-loss penalties for margin violations. Smaller $C$ strengthens regularisation; larger $C$ penalises violations more heavily. The linear kernel $K(x,z)=x^\top z$ yields a linear boundary in the engineered features. The RBF kernel
+\[
+K(x,z)=\exp(-\gamma\|x-z\|^2)
+\]
+allows non-linear boundaries; larger $\gamma$ makes similarity more local. Unlike logistic regression's cross-entropy objective, SVM optimises a margin-based objective and its decision scores are not calibrated survival probabilities.
+
+Both kernels use \texttt{StandardScaler} inside the searched pipeline, fitted only to the relevant inner/outer training samples. Linear SVM searches $C\in\{0.01,0.03,0.1,0.3,1,3,10,100\}$. RBF searches $C\in\{0.03,0.1,0.3,1,3,10,100\}$ and $\gamma\in\{\mathrm{scale},0.001,0.01,0.03,0.1\}$ (35 combinations). The scale option computes $\gamma=1/(d\,\mathrm{Var}(X))$ from the scaled training matrix with $d=23$. Grid search selects by inner accuracy, not outer AUC. We use \texttt{SVC} with shrinking disabled to avoid a severe solver slowdown, tolerance 0.001, and no probability calibration; ROC-AUC is calculated from \texttt{decision\_function}.
+
+Linear SVM obtains accuracy $0.8274\pm0.0259$, F1 0.7610, AUC 0.8365 and training accuracy 0.8280. RBF obtains $0.8240\pm0.0202$, F1 0.7542, AUC 0.8558 and training accuracy 0.8435 (Fig.~\ref{fig:person-c-kernels}). Their mean train--test gaps are 0.0006 and 0.0195. Linear $C=0.3$ is selected in 17/25 folds, and $C=0.01$ and 0.1 each in four. The most frequent RBF pair is $C=0.3$, $\gamma=\mathrm{scale}$ (6/25 folds); the remaining folds select other pairs, so no universal best pair is inferred.
+\begin{figure*}[t]\centering
+  \includegraphics[width=\textwidth]{figures/svm_kernel_comparison.png}
+  \caption{Nested-CV Linear/RBF SVM comparison. Bars are means and error bars are standard deviations over 25 outer folds, not confidence intervals.}\label{fig:person-c-kernels}
+\end{figure*}
+
+Fig.~\ref{fig:person-c-linear-c} shows that the mean inner validation accuracy rises from 0.8249 at $C=0.01$ to 0.8277 at $C=0.3$, then remains at the same reported value through $C=100$. The small training--validation gap does not suggest substantial overfitting in this linear grid. The RBF heatmap (Fig.~\ref{fig:person-c-rbf-grid}) shows sensitivity to both parameters: for example, $C=0.03$, $\gamma=0.001$ gives inner validation accuracy 0.616, while $C=0.3$, $\gamma=\mathrm{scale}$ gives approximately 0.831. These are tuning diagnostics averaged across outer training sets, not additional held-out performance estimates. RBF's higher AUC but lower accuracy than linear SVM indicates better observed ranking without better classification at the default decision threshold.
+\begin{figure}[t]\centering
+  \includegraphics[width=\linewidth]{figures/svm_linear_c.png}
+  \caption{Linear SVM $C$ experiment using inner-CV scores. Error bars show variation of inner validation means across outer folds.}\label{fig:person-c-linear-c}
+\end{figure}
+\begin{figure}[t]\centering
+  \includegraphics[width=\linewidth]{figures/svm_rbf_c_gamma_heatmap.png}
+  \caption{Mean RBF inner validation accuracy over outer folds, for each $C$ and $\gamma$.}\label{fig:person-c-rbf-grid}
+\end{figure}
+
+\subsection{Iterative Improvement and Leaderboard}\label{sec:iter}
 We iterated on features and models, always selecting with repeated stratified CV (identical folds for all candidates)
 and recording the public leaderboard score of each submission (Table~\ref{tab:versions}).
 \begin{table}[t]
@@ -174,7 +217,7 @@ vote5: majority vote of 5 submissions & --- & 0.79186 \\
 (ii) Simplifying the family features (four flags instead of FamilySize/IsAlone/SibSp/Parch) kept CV unchanged once a ``large family'' flag was included (0.830 vs.\ 0.831) but removing it lost 1.7 points, because survival is non-monotone in family size.
 (iii) Age imputation using family members' ages lowered the imputation MAE (8.61 $\to$ 8.10 years) but did not change survival accuracy; only 38--52 of the 263 passengers with missing age have a relative or ticket mate with a known age.
 (iv) Feature selection (mutual information, RFE, L1; selected inside each fold) did not beat the full feature set (0.835--0.839 vs.\ 0.842), but the stable core was Sex, Title\_Mr/Mrs, Pclass\_3 and the ticket-group rates.
-(v) Scores of v2--v6 span 0.780--0.797, i.e.\ 7 passengers. With 418 test passengers the standard error of an accuracy near 0.79 is $\approx 2$ points ($\approx 8$ passengers), so these versions cannot be statistically distinguished, and the CV ranking does not match the leaderboard ranking. We therefore treat CV as the primary model-selection criterion and the leaderboard only as a final check; we deliberately did not tune against the leaderboard.
+(v) Scores of v2--v6 span 0.780--0.797, i.e.\ 7 passengers. With 418 test passengers the standard error of an accuracy near 0.79 is $\approx 2$ points ($\approx 8$ passengers); this rough uncertainty calculation does not constitute a paired significance test of the versions. The CV ranking does not match the leaderboard ranking. We therefore treat CV as the primary model-selection criterion and the leaderboard only as a final check; we deliberately did not tune against the leaderboard.
 % TODO: insert screenshot of the Kaggle leaderboard / submission list here (required by the instructions).
 \begin{figure}[t]\centering
   % \includegraphics[width=\linewidth]{leaderboard.png}
@@ -182,18 +225,17 @@ vote5: majority vote of 5 submissions & --- & 0.79186 \\
   \caption{Kaggle leaderboard result.}
 \end{figure}
 
-\subsection{Why CV and leaderboard differ}
-The training CV ($\approx$0.84) is higher than the public score ($\approx$0.79). Reasons: the test set is small (standard error $\approx$2 points); it is intrinsically harder (the sex-only rule scores 0.787 on train but 0.766 on test); imputation statistics were computed once on the full training set before CV (label-free, small effect); and in test, relatives who are also in the test set carry no known label, whereas group features in CV can use labels of relatives in the training folds.
+\subsection{Why CV and Leaderboard Differ}
+The training CV ($\approx$0.84) is higher than the public score ($\approx$0.79). Possible contributors: the test set is small (standard error $\approx$2 points); the sex-only rule scores 0.787 on train but 0.766 on test; imputation statistics were precomputed before CV (label-free, with unmeasured effect); and in test, relatives who are also in the test set carry no known label, whereas group features in CV can use labels of relatives in the training folds.
 
 \section{Conclusion}
 Careful feature engineering (+4 points over a Sex/Pclass/Age baseline) mattered more than the choice of model: regularised
-logistic regression, random forest and gradient boosting end within noise of each other. Title is the only single feature group
+logistic regression, random forest and gradient boosting have similar observed CV accuracies. Title is the only single feature group
 whose removal clearly hurts, and group-survival
 (same ticket / surname) information gave the largest later improvement (leaderboard 0.766 $\to$ 0.797).
-Beyond that, model complexity, feature selection and ensembling gave no distinguishable gains on this small data set.
-Our final submission is v2 (public score 0.79665). \todo{Members 2 and 3: add one sentence on how $k$NN, Naive Bayes, decision tree and SVM compare.}
-\textbf{Limitations:} the training set is small, CV differences are within one standard deviation, and the imputation
-statistics were fitted once on the full training set before CV (label-free, so the optimistic bias is small, but a strict
-pipeline would refit them inside each fold). \textbf{Future work:} ticket/surname group features, interaction terms, stacking.
+Beyond that, model complexity, feature selection and ensembling gave no consistent observed gains on this small data set.
+Our final submission is v2 (public score 0.79665). The nested-CV decision tree, linear SVM and RBF SVM reach observed accuracies 0.8303, 0.8274 and 0.8240, respectively; none provides a clear descriptive accuracy improvement over the existing LR and ensemble references. \todo{Member 2: add a sentence on $k$NN and Naive Bayes after their evaluation.}
+
+\paragraph{Limitations of the Decision Tree and SVM Comparison.} Dataset B has label-free but precomputed preprocessing: age medians and ticket counts use combined train/test covariates and are not refitted within CV. Thus the reported outer scores are conditional on that shared representation, not a fully inductive end-to-end preprocessing evaluation; the size and direction of any bias were not measured. Scaling for SVM is fold-local. The decision tree and SVM experiments use nested tuning, whereas the existing LR/ensemble reference rows evaluate fixed configurations and LR has separate sweeps; earlier iterations also vary features, seeds and repeats. These differences limit model-only comparisons. Repeated CV folds share training samples, so their standard deviation measures observed fold variability and is not a confidence interval or a significance test. We make no statistical superiority or equivalence claim for the tree/SVM rankings. Gini importances are model-dependent and affected by correlated predictors. The group-feature submission scores are a separate study, not test-set validation of the tree and SVM models. Future work should focus on fitting preprocessing within each cross-validation fold and applying a consistent nested cross-validation protocol across all models to ensure more reliable and fair comparisons..
 
 \end{document}

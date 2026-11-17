@@ -1,0 +1,27 @@
+% Report integration snapshot: never written by run_B_experiments.py.
+% Existing reference rows copied verbatim from results_table.tex and checked
+% against logistic_regression/results/results_B.csv. Decision Tree and SVM rows come from
+% team/results/person_c/results_DecisionTree.csv and svm_summary.csv.
+% When other members finish, update this active table as well as their sources.
+\begin{table*}[t]
+\centering\small
+\caption{Repeated $5\times5$ stratified CV on dataset B. Accuracy is mean $\pm$ standard deviation; F1 and AUC are means. The decision tree and SVM models use nested tuning, while the LR and ensemble references use fixed configurations.}
+\label{tab:models}
+\begin{tabular}{lccc}
+\toprule
+Model & Accuracy & F1 & AUC \\
+\midrule
+Logistic Regression (L2, $C{=}0.1$) & 0.8296 $\pm$ 0.0215 & 0.7744 & 0.8717 \\
+Logistic Regression (L1, $C{=}0.3$) & 0.8298 $\pm$ 0.0223 & 0.7732 & 0.8705 \\
+Logistic Regression + PCA(10) & 0.8292 $\pm$ 0.0254 & 0.7725 & 0.8707 \\
+Random Forest (reference) & 0.8312 $\pm$ 0.0169 & 0.7671 & 0.8799 \\
+Gradient Boosting (reference) & 0.8292 $\pm$ 0.0233 & 0.7740 & 0.8762 \\
+\midrule
+$k$NN & \todo{fill} & \todo{fill} & \todo{fill} \\
+Gaussian Naive Bayes & \todo{fill} & \todo{fill} & \todo{fill} \\
+Decision Tree (nested CV) & 0.8303 $\pm$ 0.0281 & 0.7714 & 0.8604 \\
+SVM linear (nested CV) & 0.8274 $\pm$ 0.0259 & 0.7610 & 0.8365 \\
+SVM RBF (nested CV) & 0.8240 $\pm$ 0.0202 & 0.7542 & 0.8558 \\
+\bottomrule
+\end{tabular}
+\end{table*}
