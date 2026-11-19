@@ -5,7 +5,7 @@
 % When other members finish, update this active table as well as their sources.
 \begin{table*}[t]
 \centering\small
-\caption{Repeated $5\times5$ stratified CV on dataset B. Accuracy is mean $\pm$ standard deviation; F1 and AUC are means. The decision tree and SVM models use nested tuning, while the LR and ensemble references use fixed configurations.}
+\caption{Repeated $5\times5$ stratified CV on dataset B. Accuracy is mean $\pm$ standard deviation; F1 and AUC are means. The $k$NN, Gaussian Naive Bayes, decision tree and SVM models use nested tuning, while the LR and ensemble references use fixed configurations. Nested-model parameters are selected separately in each outer fold.}
 \label{tab:models}
 \begin{tabular}{lccc}
 \toprule
@@ -17,8 +17,8 @@ Logistic Regression + PCA(10) & 0.8292 $\pm$ 0.0254 & 0.7725 & 0.8707 \\
 Random Forest (reference) & 0.8312 $\pm$ 0.0169 & 0.7671 & 0.8799 \\
 Gradient Boosting (reference) & 0.8292 $\pm$ 0.0233 & 0.7740 & 0.8762 \\
 \midrule
-$k$NN & \todo{fill} & \todo{fill} & \todo{fill} \\
-Gaussian Naive Bayes & \todo{fill} & \todo{fill} & \todo{fill} \\
+$k$NN (scaled, nested CV) & $0.8229\pm0.0174$ & 0.7553 & 0.8615 \\
+Gaussian Naive Bayes (nested CV) & $0.7960\pm0.0305$ & 0.7441 & 0.8546 \\
 Decision Tree (nested CV) & 0.8303 $\pm$ 0.0281 & 0.7714 & 0.8604 \\
 SVM linear (nested CV) & 0.8274 $\pm$ 0.0259 & 0.7610 & 0.8365 \\
 SVM RBF (nested CV) & 0.8240 $\pm$ 0.0202 & 0.7542 & 0.8558 \\

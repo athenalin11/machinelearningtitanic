@@ -1,0 +1,9 @@
+# Target environment matching Person C; use a dedicated Python 3.12 environment.
+# Not installed by this task; requirements_person_b.txt records the existing run.
+numpy==2.2.6
+pandas==2.2.3
+scipy==1.15.3
+scikit-learn==1.6.1
+matplotlib==3.10.3
+joblib==1.5.1
+threadpoolctl==3.6.0

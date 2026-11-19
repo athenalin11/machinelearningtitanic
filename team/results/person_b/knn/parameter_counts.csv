@@ -1,0 +1,17 @@
+model,selected_params,outer_fold_count
+knn_scaled,"{""clf__n_neighbors"": 11, ""clf__weights"": ""uniform""}",3
+knn_scaled,"{""clf__n_neighbors"": 15, ""clf__weights"": ""uniform""}",5
+knn_scaled,"{""clf__n_neighbors"": 21, ""clf__weights"": ""uniform""}",1
+knn_scaled,"{""clf__n_neighbors"": 31, ""clf__weights"": ""uniform""}",2
+knn_scaled,"{""clf__n_neighbors"": 5, ""clf__weights"": ""uniform""}",3
+knn_scaled,"{""clf__n_neighbors"": 51, ""clf__weights"": ""distance""}",3
+knn_scaled,"{""clf__n_neighbors"": 7, ""clf__weights"": ""uniform""}",5
+knn_scaled,"{""clf__n_neighbors"": 9, ""clf__weights"": ""uniform""}",3
+knn_unscaled,"{""clf__n_neighbors"": 3, ""clf__weights"": ""distance""}",1
+knn_unscaled,"{""clf__n_neighbors"": 3, ""clf__weights"": ""uniform""}",5
+knn_unscaled,"{""clf__n_neighbors"": 5, ""clf__weights"": ""distance""}",3
+knn_unscaled,"{""clf__n_neighbors"": 5, ""clf__weights"": ""uniform""}",4
+knn_unscaled,"{""clf__n_neighbors"": 7, ""clf__weights"": ""distance""}",4
+knn_unscaled,"{""clf__n_neighbors"": 7, ""clf__weights"": ""uniform""}",5
+knn_unscaled,"{""clf__n_neighbors"": 9, ""clf__weights"": ""distance""}",2
+knn_unscaled,"{""clf__n_neighbors"": 9, ""clf__weights"": ""uniform""}",1
