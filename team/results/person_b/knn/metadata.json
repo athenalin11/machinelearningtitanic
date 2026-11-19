@@ -1,0 +1,101 @@
+{
+  "model_family": "knn",
+  "smoke_test": false,
+  "python": "3.9.18",
+  "platform": "macOS-15.5-arm64-arm-64bit",
+  "numpy": "1.26.4",
+  "pandas": "2.2.1",
+  "scikit_learn": "1.3.0",
+  "matplotlib": "3.8.4",
+  "dataset": "data/processed/B_v4_FamilyFlags_AgeTitlePclassParch_train.csv",
+  "dataset_sha256": "a1320edb02aef01458220edae6b36bc222805744bfd00ed144ca7be1d1c446fd",
+  "features": [
+    "Female",
+    "Age",
+    "IsChild",
+    "AgeMissing",
+    "LogFare",
+    "HasCabin",
+    "HasFamily",
+    "HasChildren",
+    "WithParents",
+    "LargeFamily",
+    "Title_Master",
+    "Title_Miss",
+    "Title_Mr",
+    "Title_Mrs",
+    "Title_Rare",
+    "Embarked_C",
+    "Embarked_Q",
+    "Embarked_S",
+    "Pclass_1",
+    "Pclass_2",
+    "Pclass_3",
+    "TicketSize",
+    "LogFarePP"
+  ],
+  "outer": {
+    "splits": 5,
+    "repeats": 5,
+    "seed": 42
+  },
+  "actual_outer_folds": 25,
+  "inner": {
+    "splits": 5,
+    "shuffle": true,
+    "seed": 1
+  },
+  "grids": {
+    "knn_unscaled": {
+      "clf__n_neighbors": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        15,
+        21,
+        31,
+        51
+      ],
+      "clf__weights": [
+        "uniform",
+        "distance"
+      ]
+    },
+    "knn_scaled": {
+      "clf__n_neighbors": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        15,
+        21,
+        31,
+        51
+      ],
+      "clf__weights": [
+        "uniform",
+        "distance"
+      ]
+    }
+  },
+  "scoring": "accuracy",
+  "std_ddof": 0,
+  "knn_distance": "euclidean",
+  "knn_algorithm": "brute",
+  "threads": 1,
+  "notes": [
+    "B preprocessing is precomputed on train/test covariates, not refitted in folds.",
+    "StandardScaler is fitted only within inner/outer training folds.",
+    "Scaled/unscaled KNN are tuned separately on identical outer/inner splits.",
+    "K curves hold Euclidean distance and uniform weights fixed; use inner scores only.",
+    "GaussianNB receives unscaled features; smoothing is relative to largest feature variance.",
+    "Repeated-fold standard deviation is not a confidence interval; no significance test.",
+    "No final full-data model or Kaggle submission is generated.",
+    "Runtime differs from Person C sklearn 1.6.1; compare descriptively."
+  ]
+}

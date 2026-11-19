@@ -3,9 +3,10 @@
 \usepackage{booktabs,graphicx,amsmath,hyperref,xcolor}
 % Placeholder for text / numbers that teammates still have to fill in (search for "\todo" in this file)
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
 \title{AI6102 Team Project: Predicting Survival on the Titanic}
 \author{%
-  LIN, YUN-FAN (G2608301F) \and\todo{Member 2: NAME (Matric No.)}\and WANG, YAHUI (G2606270J)\\
+  LIN, YUN-FAN (G2608301F) \and LAI, WEN-TZU(G2605696C) \and WANG, YAHUI (G2606270J)\\
 }
 \date{}
 \begin{document}
@@ -16,7 +17,9 @@ We study the Kaggle \emph{Titanic -- Machine Learning from Disaster} competition
 We build a preprocessing and feature-engineering pipeline, compare several learning methods with repeated
 stratified cross-validation, and analyse the contribution of each feature group with an ablation study.
 A regularised logistic regression reaches $\approx$0.83 CV accuracy, on par with tree ensembles.
+The decision tree, SVMs and scaled $k$NN have broadly similar observed accuracies, whereas Gaussian Naive Bayes performs less well.
 Adding fold-safe group-survival features raises the public score from 0.766 to 0.797.
+
 \end{abstract}
 
 \section{Problem Statement}
@@ -110,9 +113,14 @@ and the parameters minimise the regularised cross-entropy, which equals the nega
 This is structural risk minimisation: $1/C$ controls model complexity (Occam's razor). The objective is convex and differentiable, so a global optimum is found with L-BFGS (liblinear for $L_1$). Features are standardised so that the penalty treats all coefficients equally. We chose logistic regression because (i) the signals found in the EDA are largely additive, (ii) with 891 samples a low-variance model is preferable, and (iii) its coefficients can be interpreted: with standardised inputs the largest were LargeFamily ($-0.60$), Female ($+0.58$), Title\_Mr ($-0.54$), Title\_Master ($+0.42$), Title\_Mrs ($+0.38$), Age ($-0.31$), HasCabin ($+0.29$) and Pclass\_3 ($-0.27$). The regularisation strength $C$ is selected by cross-validation (Sec.~\ref{sec:reg}); other models serve as comparison.
 
 \subsection{Evaluation Protocol}
-For the dataset-B comparison we use \textbf{stratified 5-fold CV repeated 5 times} (outer seed 42); some earlier feature experiments use other seeds or 10 repeats. The decision tree and SVM models use nested CV: an inner stratified 5-fold splitter (shuffle enabled, seed 1) and accuracy-scored grid search within each outer training fold. The selected estimator is refitted on that outer training fold and evaluated on its held-out fold. The LR and ensemble references use the same outer splitter but fixed configurations, with separate LR parameter sweeps rather than nested selection. Metrics are accuracy, survivor-class F1 and ROC-AUC, averaged over 25 outer folds; reported standard deviations use divisor 25. Tree AUC uses predicted probabilities; SVM AUC uses decision scores. The Kaggle public score is used only as a final check. \textbf{Feature ablation:} we remove one feature group at a time (Sex, Pclass, Title, Age, Family, Fare, Cabin, Embarked), retrain with the same pipeline and splits, and report the change in accuracy and AUC relative to the full model; ``Only Sex'' gives the lower bound.
+For the dataset-B comparison we use \textbf{stratified 5-fold CV repeated 5 times} (outer seed 42); some earlier feature experiments use other seeds or 10 repeats. The $k$NN, Gaussian Naive Bayes, decision tree and SVM models use nested CV: an inner stratified 5-fold splitter (shuffle enabled, seed 1) and accuracy-scored grid search within each outer training fold. The selected estimator is refitted on that outer training fold and evaluated on its held-out fold. The LR and ensemble references use the same outer splitter but fixed configurations, with separate LR parameter sweeps rather than nested selection. Metrics are accuracy (the primary selection metric), survivor-class F1 and ROC-AUC, averaged over 25 outer folds; reported standard deviations use divisor 25. For $k$NN, Gaussian Naive Bayes and the decision tree, AUC uses predicted survivor probabilities; SVM AUC uses decision scores. The Kaggle public score is used only as a final check. \textbf{Feature ablation:} we remove one feature group at a time (Sex, Pclass, Title, Age, Family, Fare, Cabin, Embarked), retrain with the same pipeline and splits, and report the change in accuracy and AUC relative to the full model; ``Only Sex'' gives the lower bound.
 
-\textbf{Models compared.} We evaluate logistic regression ($L_2$ and $L_1$), logistic regression on PCA components, and random forest / gradient boosting as non-linear references. We further evaluate a decision tree and linear/RBF SVMs with the nested protocol in \texttt{team/person\_c\_tree\_svm.py} and \texttt{team/person\_c\_svm.py}; the $k$NN and Gaussian Naive Bayes evaluations remain incomplete. All model comparisons, the regularisation sweep and the ablation use \textbf{dataset B} (23 label-free features, Sec.~\ref{sec:fe}); the group-survival features of dataset C enter only the iteration study of Sec.~\ref{sec:iter}. For the tree and SVM experiments, we drop PassengerId, Survived and fold from the predictors, use all 23 features without further feature selection, and fit SVM scaling within each inner and outer training fold.
+\textbf{Models compared.} We evaluate logistic regression ($L_2$ and $L_1$), logistic regression on PCA components, and random forest / gradient boosting as non-linear references.
+We also compare scaled/unscaled $k$NN and Gaussian Naive Bayes using \texttt{team/person\_b\_knn.py} and \texttt{team/person\_b\_naive\_bayes.py}.
+We further evaluate a decision tree and linear/RBF SVMs with the nested protocol in \texttt{team/person\_c\_tree\_svm.py} and \texttt{team/person\_c\_svm.py}.
+All model comparisons, the regularisation sweep and the ablation use \textbf{dataset B} (23 label-free features, Sec.~\ref{sec:fe}); the group-survival features of dataset C enter only the iteration study of Sec.~\ref{sec:iter}.
+For the $k$NN, Gaussian Naive Bayes, tree and SVM experiments, we drop PassengerId, Survived and fold from the predictors and use all 23 features without further feature selection.
+The scaled $k$NN branch and SVM fit their scaler within each inner and outer training fold.
 
 \section{Experiments}
 \subsection{Model Comparison}
@@ -121,8 +129,13 @@ Table~\ref{tab:models} compares the methods on dataset B with repeated $5\times5
 \input{tables/results_table_integrated}
 Logistic regression ($L_2$, $L_1$ and on PCA components) reaches 0.829--0.830, while the non-linear references random forest and gradient boosting reach 0.8312 and 0.8292. Their AUCs (0.8799 and 0.8762) exceed the $L_2$ LR value of 0.8717. PCA(10) gives a similar observed accuracy to LR on all 23 features; this suggests a compact representation may suffice, rather than proving that individual features are redundant.
 
+Scaled $k$NN obtains $0.8229\pm0.0174$ accuracy, F1 0.7553 and AUC 0.8615; Gaussian Naive Bayes obtains $0.7960\pm0.0305$, F1 0.7441 and AUC 0.8546.
+Their observed accuracies are below the $L_2$ LR reference (0.8296) and nested-CV decision tree (0.8303).
+Scaled $k$NN has an observed AUC close to the tree's 0.8604, without establishing equivalence or superiority.
+Differences in tuning protocols and overlapping CV samples limit model-only conclusions and statistical significance claims from these summaries.
+The scaling comparison in Table~\ref{tab:person-b-scaling} uses the same data and split settings.
+
 The decision tree tuned by nested CV reaches 0.8303 accuracy, linear SVM 0.8274 and RBF SVM 0.8240. The tree's rules can express interactions between sex/title, class and fare, whereas linear SVM uses an additive boundary in the engineered feature space. RBF allows local non-linear boundaries, but here has lower observed accuracy and F1 than linear SVM, despite higher AUC (0.8558 versus 0.8365). All three have lower observed AUC than the existing LR and ensemble references. These descriptive rankings do not establish statistical superiority: folds overlap and tuning protocols are not identical. The later soft-vote ensemble (LR, GB, RF) also uses target-derived group features and a different iteration protocol, so its recorded 0.840 CV accuracy and 0.79665 public score are not a controlled model-only comparison with the dataset-B tree/SVM results.
-\todo{Member 2: add the $k$NN and Naive Bayes comparisons after their results are available.}
 
 \subsection{Regularisation and Overfitting}\label{sec:reg}
 Following the lecture on over-fitting and structural risk minimisation, we sweep $C$ (inverse regularisation strength) and compare training and validation accuracy (Table~\ref{tab:reg}).
@@ -139,9 +152,109 @@ With $C=0.1$ the out-of-fold confusion matrix is TN$=477$, FP$=72$, FN$=83$, TP$
 
 \subsection{Other Methods}
 \subsubsection{$k$-Nearest Neighbours}
-\todo{Describe the method and why it may (not) fit the data; distance metric and feature scaling; tuned $k$ (nested CV); train-vs-CV curve over $k$; result row in Table~\ref{tab:models}.}
+
+$k$NN predicts from nearby training passengers. We use Euclidean distance,
+\[
+ d(x,z)=\sqrt{\sum_{j=1}^{23}(x_j-z_j)^2},
+\]
+with exact brute-force neighbour search. Uniform voting weights neighbours equally, whereas distance voting gives closer neighbours greater influence.
+The inner grid searches $k\in\{1,3,5,7,9,11,15,21,31,51\}$ and both voting schemes (20 candidates per scaling branch).
+Separate unscaled and standardised pipelines use identical inner and outer splits.
+Without scaling, age, fare and count variables can dominate distances to binary indicators.
+Standardisation also changes the relative influence of rare binary variables, so it is a modelling choice rather than a guarantee of improvement.
+
+\paragraph{Scaling experiment.}
+Table~\ref{tab:person-b-scaling} reports held-out outer-fold results.
+Standardisation raises mean accuracy from 0.7827 to 0.8229, an observed difference of 4.01 percentage points.
+Each branch selects its own $k$ and voting scheme inside each outer training set: this compares tuned procedures, not a fixed-parameter scaling effect.
+For a controlled diagnostic, Fig.~\ref{fig:person-b-k} fixes Euclidean distance and uniform voting and compares identical $k$ values.
+At $k=15$, mean inner validation accuracy is 0.8230 with scaling and 0.7406 without it.
+
+\paragraph{Complexity and parameter selection.}
+For scaled uniform-vote $k$NN, inner training/validation accuracy is 0.9876/0.7556 at $k=1$ and 0.8422/0.8230 at $k=15$; validation accuracy falls to 0.7886 at $k=51$.
+This pattern is consistent with noisy local fitting at small $k$ and excessive smoothing at large $k$.
+Training accuracy at $k=1$ need not equal one when identical feature vectors or neighbour-distance ties occur.
+The curves are inner-CV diagnostics, not independent held-out performance estimates.
+
+Uniform voting is selected in 22/25 scaled outer fits (88\%); $k=7$ and $k=15$ are tied as the most frequent values (five folds each).
+Three fits select distance voting with $k=51$, the grid boundary; this finite search does not establish a global optimum.
+No single full-data best parameter is inferred from the frequencies.
+Unscaled mean training/outer accuracy is 0.9045/0.7827, versus 0.8671/0.8229 with scaling.
+Distance-weighted training scores can benefit from a training point's own zero-distance vote, so these gaps must be interpreted together with the voting settings.
+
+\begin{table*}[t]
+\centering\small
+\caption{$k$NN scaling experiment on dataset B: each branch is independently tuned inside the same 25 outer folds. Outer accuracy is mean $\pm$ standard deviation; training accuracy, F1 and AUC are means.}
+\label{tab:person-b-scaling}
+\begin{tabular}{lcccc}
+\toprule
+$k$NN input & Train accuracy & Outer accuracy & F1 & AUC \\
+\midrule
+Unscaled & 0.9045 & $0.7827\pm0.0285$ & 0.7056 & 0.8196 \\
+Standardised & 0.8671 & $0.8229\pm0.0174$ & 0.7553 & 0.8615 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/person_b/knn/knn_k_scaling.png}
+\caption{Inner-CV $k$NN neighbour-count and scaling diagnostics, with Euclidean distance and uniform voting held fixed. Error bars show the standard deviation of inner validation means across outer training sets, not confidence intervals.}
+\label{fig:person-b-k}
+\end{figure*}
+
 \subsubsection{Naive Bayes}
-\todo{Describe the (Gaussian / Bernoulli) model and the independence assumption; discuss which of our features violate it (e.g.\ Sex and Title); result row in Table~\ref{tab:models}.}
+
+Gaussian Naive Bayes combines class priors with per-feature Gaussian likelihoods under conditional independence:
+\[
+ \hat y=\arg\max_{c\in\{0,1\}}P(y=c)\prod_{j=1}^{23}p(x_j\mid y=c).
+\]
+The class prior $P(y=c)$ is estimated from the class frequencies in each training split.
+For feature $j$ and class $c$, Gaussian Naive Bayes estimates a mean $\hat\mu_{cj}$ and variance $\hat\sigma_{cj}^{2}$ and models the class-conditional density as
+\[
+ p(x_j\mid y=c)=\frac{1}{\sqrt{2\pi\hat\sigma_{cj}^{2}}}
+ \exp\!\left[-\frac{(x_j-\hat\mu_{cj})^2}{2\hat\sigma_{cj}^{2}}\right].
+\]
+Conditional independence allows the joint likelihood to factor into these per-feature densities; Bayes' rule combines that likelihood with the class prior.
+Prediction chooses the class with the larger posterior score, evaluated in log space to avoid multiplying many small numbers.
+
+We use Gaussian Naive Bayes as a probabilistic reference model because dataset B retains continuous age and fare features.
+Bernoulli Naive Bayes instead models binary indicators (0 or 1); applying it to these continuous variables would require explicit binarisation choices and would discard their original numerical detail.
+We do not evaluate Bernoulli Naive Bayes here, so no claim is made that Gaussian Naive Bayes outperforms it.
+Gaussian likelihoods remain only an approximation for B's one-hot and binary indicators.
+
+\paragraph{Smoothing experiment.}
+The inner grid searches \texttt{var\_smoothing} over $10^{-12},10^{-11},\ldots,10^0$ (13 candidates).
+To avoid near-zero estimated variances, Gaussian Naive Bayes adds the same stability term to each class-feature variance:
+\[
+ \epsilon=\texttt{var\_smoothing}\cdot\max_j\operatorname{Var}_{\rm train}(X_j),
+ \qquad \tilde\sigma_{cj}^{2}=\hat\sigma_{cj}^{2}+\epsilon.
+\]
+The smoothed variance is used in the likelihood calculation.
+We use unscaled B features; rescaling would also change the smoothing effect.
+Parameters are selected independently in each outer training set using inner accuracy only.
+
+Outer accuracy is $0.7960\pm0.0305$, F1 0.7441 and AUC 0.8546, with mean training accuracy 0.8086.
+The value $10^{-4}$ is selected in 16/25 folds (64\%).
+Fig.~\ref{fig:person-b-nb} shows mean inner validation accuracy 0.7929 at $10^{-4}$, decreasing to 0.6158 and 0.6162 at $10^{-1}$ and $1$.
+These values approach the majority-class baseline (61.6\%), consistent with excessive smoothing reducing discrimination.
+Two fits select the smallest grid value ($10^{-12}$); several small values have equal inner scores, so a unique numerical optimum is not established.
+
+\paragraph{Conditional independence and limitations.}
+Conditional independence means that, after the survival class is given, one feature supplies no further information about another feature.
+Sex and Title encode overlapping information; class, fare and cabin presence, and family flags and ticket size, may also retain dependencies within a class.
+The one-hot indicators of a categorical variable are mutually exclusive and are not independent when multiple categories occur within a class.
+These structural considerations make the independence assumption restrictive, while Gaussian likelihoods are also an approximation for binary inputs.
+We have not isolated these factors with a correlated-feature-removal experiment, so they are possible limitations rather than established causes of the lower accuracy.
+A marginal correlation matrix alone would not test the full conditional-independence assumption.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/person_b/naive_bayes/nb_smoothing.png}
+\caption{Gaussian Naive Bayes inner-CV smoothing experiment. Error bars describe variation of inner validation means across outer training sets; outer-fold metrics appear in Table~\ref{tab:models}.}
+\label{fig:person-b-nb}
+\end{figure}
+
 \subsubsection{Decision Tree}
 A binary decision tree chooses feature thresholds to reduce the weighted impurity of its child nodes. At a node with class proportions $p_k$, the Gini index is
 \[
@@ -234,7 +347,21 @@ logistic regression, random forest and gradient boosting have similar observed C
 whose removal clearly hurts, and group-survival
 (same ticket / surname) information gave the largest later improvement (leaderboard 0.766 $\to$ 0.797).
 Beyond that, model complexity, feature selection and ensembling gave no consistent observed gains on this small data set.
-Our final submission is v2 (public score 0.79665). The nested-CV decision tree, linear SVM and RBF SVM reach observed accuracies 0.8303, 0.8274 and 0.8240, respectively; none provides a clear descriptive accuracy improvement over the existing LR and ensemble references. \todo{Member 2: add a sentence on $k$NN and Naive Bayes after their evaluation.}
+Our final submission is v2 (public score 0.79665). The nested-CV decision tree, linear SVM and RBF SVM reach observed accuracies 0.8303, 0.8274 and 0.8240, respectively; none provides a clear descriptive accuracy improvement over the existing LR and ensemble references. 
+
+Standardisation raises the observed accuracy of the independently tuned $k$NN procedure by 4.01 percentage points to 0.8229.
+Gaussian Naive Bayes reaches 0.7960; neither surpasses the recorded LR reference in observed accuracy.
+The controlled $k$ curves and smoothing diagnostics illustrate model-complexity and variance-smoothing effects.
+
+\paragraph{Limitations of the $k$NN and Naive Bayes Comparison.}
+$k$NN depends on the feature scales and distance representation: correlated or redundant predictors can give repeated weight to the same information, while standardisation can increase the influence of rare binary indicators.
+The finite neighbour-count grid and split-dependent parameter choices do not establish a universally optimal $k$; three scaled outer fits select the upper grid boundary.
+Gaussian Naive Bayes imposes class-conditional Gaussian distributions and conditional independence, which are restrictive for the mixture of continuous, binary and related features in dataset B.
+Its predictions also depend on variance smoothing and feature scales.
+These assumptions offer possible explanations, not experimentally established causes of the accuracy difference.
+Both evaluations use the team's precomputed dataset B representation, so they inherit the preprocessing limitation described in Section 3.3. 
+The small sample and overlapping repeated-CV folds limit generalisation claims; fold variability is not a significance test.
+Future work could fit preprocessing within each fold and evaluate targeted feature ablations under the same nested protocol.
 
 \paragraph{Limitations of the Decision Tree and SVM Comparison.} Dataset B has label-free but precomputed preprocessing: age medians and ticket counts use combined train/test covariates and are not refitted within CV. Thus the reported outer scores are conditional on that shared representation, not a fully inductive end-to-end preprocessing evaluation; the size and direction of any bias were not measured. Scaling for SVM is fold-local. The decision tree and SVM experiments use nested tuning, whereas the existing LR/ensemble reference rows evaluate fixed configurations and LR has separate sweeps; earlier iterations also vary features, seeds and repeats. These differences limit model-only comparisons. Repeated CV folds share training samples, so their standard deviation measures observed fold variability and is not a confidence interval or a significance test. We make no statistical superiority or equivalence claim for the tree/SVM rankings. Gini importances are model-dependent and affected by correlated predictors. The group-feature submission scores are a separate study, not test-set validation of the tree and SVM models. Future work should focus on fitting preprocessing within each cross-validation fold and applying a consistent nested cross-validation protocol across all models to ensure more reliable and fair comparisons..
 
